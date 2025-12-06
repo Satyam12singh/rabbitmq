@@ -28,14 +28,20 @@ class Rabbitmq():
         self.producer_channel = None
 
     def connection_establish(self):
-        credentials = PlainCredentials(self.user, self.password, erase_on_connect=False)
-        connection = ConnectionParameters(
-            self.host,
-            self.port,
-            credentials=credentials,
-            heartbeat=600
-        )
-        return pika.BlockingConnection(connection)
+        while True:
+            try:
+                credentials = PlainCredentials(self.user, self.password, erase_on_connect=False)
+                connection = ConnectionParameters(
+                    self.host,
+                    self.port,
+                    credentials=credentials,
+                    heartbeat=600
+                )
+                return pika.BlockingConnection(connection)
+            except Exception as e:
+                logging.info(f"Error connecting to RabbitMQ: {e}")
+                logging.info("Reconnecting to RabbitMQ...")
+                time.sleep(5)
 
     def callback(self, ch, method, properties, body):
         logging.info(f"recieved {body}")
@@ -108,7 +114,10 @@ class Rabbitmq():
             logging.info("Producer stopped by user.")
 
     def close(self):
-        if self.producer_channel and self.producer_channel.is_open:
-            self.producer_channel.close()
-        if self.producer_connection and self.producer_connection.is_open:
-            self.producer_connection.close()
+        try:
+            if self.producer_channel and self.producer_channel.is_open:
+                self.producer_channel.close()
+            if self.producer_connection and self.producer_connection.is_open:
+                self.producer_connection.close()
+        except Exception as e:
+            logging.info(f"Error closing connection: {e}")
