@@ -4,13 +4,11 @@ import os
 from pika.connection import ConnectionParameters
 from pika.credentials import PlainCredentials
 import logging
-
 load_dotenv()
 
 logging.getLogger(__name__)
 base_path = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(filename=os.path.join(base_path, 'logs/mq.log'), level=logging.INFO)
-
 
 
 host = os.getenv("RABBIT_MQ_HOST")
@@ -44,7 +42,8 @@ class Rabbitmq():
                 time.sleep(5)
 
     def callback(self, ch, method, properties, body):
-        logging.info(f"recieved {body}")
+        message = body.decode('utf-8')
+        logging.info(f"recieved: {message}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def consumer(self, queue_name):
